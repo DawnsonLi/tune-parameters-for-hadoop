@@ -1,6 +1,5 @@
 # -*- coding:utf-8 -*-  
 import requests
-import numpy as np
 import MySQLdb 
 '''
 功能：获取并解析历史任务的详细信息，得到历史执行任务运行记录的详细信息
@@ -22,9 +21,9 @@ user = 'dbuser'
 psw = 'dbcluster'
 
 '''
-功能：按照jobid获取参数的配置信息
-输入：jobid
-返回：某个job的配置参数字典
+@功能：按照jobid获取参数的配置信息
+@输入：jobid
+@返回：某个job的配置参数字典
 '''
 def getParameter(jobid):
     try:
@@ -45,9 +44,9 @@ def getParameter(jobid):
         print "network error when get parameters for jobid:",jobid
            
 '''
-功能：按照jobid获取指定任务的输入数据大小
-输入：jobid
-返回：输入文件大小
+@功能：按照jobid获取指定任务的输入数据大小
+@输入：jobid
+@返回：输入文件大小
 '''
 def getInput(jobid):
     try:
@@ -67,39 +66,20 @@ def getInput(jobid):
          print "network error when get inputsize for jobid:",jobid
           
 '''
-功能：按照jobid获取任务中map和reduce的运行时间
-输入：jobid
-返回：多个map时间的列表和reduce列表
+@功能：访问job history server,返回jobid列表，以及jobid对应的执行时间字典
+@输入：start:时间戳，用于进行api数据过滤
+@返回：jobid列表和由jobid与job执行时间构成的列表
 '''
-def getMapReduceTime(jobid):
+def getJobs(start):
     try:
-        cs_url = url+str(jobid)+'/tasks'#url为全局变量
+        cs_url = url[:len(url)-1]+'?startedTimeBegin='+str(start)#url为全局变量
         print cs_url
+        print start
+        print "_____________"        
         r = requests.get(cs_url, auth=(user, psw))
         data = r.json()
-        mapsTime = []
-        reducesTime = []
-        tasks = data['tasks']
-        task = tasks['task']
-        for item in task:
-            if item['type'] == 'MAP':
-                mapsTime.append(item['elapsedTime'])
-            elif item['type'] == 'REDUCE':
-                reducesTime.append(item['elapsedTime']) 
-        print "get map and reduce ok",mapsTime,reducesTime
-        return mapsTime,reducesTime
-    except:
-        print "network error when get map and reduce time for jobid:",jobid
-        
-     
-'''
-功能：访问job history server,返回jobid列表，以及jobid对应的执行时间字典
-'''
-def getJobs():
-    try:
-        cs_url = url#url为全局变量
-        r = requests.get(cs_url, auth=(user, psw))
-        data = r.json()
+        if data == None:
+            return None,None
         jobs = data['jobs']
         job = jobs['job']
         jobid_list = []
@@ -114,10 +94,12 @@ def getJobs():
     except:
         print "network error when getting jobs"
         
- 
-def saveParamters(jobid,excuteTime,parameters,inputsize,mapsMedian,mapsStd,reduceMedian,reduceStd):
+'''
+@功能：将需要的信息存入数据库
+'''
+def saveParamters(jobid,excuteTime,parameters,inputsize):
     db = MySQLdb.connect("localhost","root","2345","hadoop" )
-    sql = "insert into jobParameters(jobid,excuteTime,SplitSize,Parallelcopies ,JVMReuse ,Factor ,SortMB ,ShuffleMergePer,ReduceInputPer ,SortPer ,ReduceNum,ReduceTasksMax  ,ShuffleInputPer ,MapTasksMax ,ReduceSlowstart ,inMenMergeThreshold ,ShufflelimitPer,inputsize ,mapsMedian,mapsStd ,reduceMedian ,reduceStd) values "
+    sql = "insert into jobParameters(jobid,excuteTime,SplitSize,Parallelcopies ,JVMReuse ,Factor ,SortMB ,ShuffleMergePer,ReduceInputPer ,SortPer ,ReduceNum,ReduceTasksMax  ,ShuffleInputPer ,MapTasksMax ,ReduceSlowstart ,inMenMergeThreshold ,ShufflelimitPer,inputsize) values "
       
     l = []
     l.append(str(jobid))
@@ -125,10 +107,6 @@ def saveParamters(jobid,excuteTime,parameters,inputsize,mapsMedian,mapsStd,reduc
     for p in parameters:
         l.append(float(p))
     l.append(inputsize)
-    l.append(mapsMedian)
-    l.append(mapsStd)
-    l.append(reduceMedian)
-    l.append(reduceStd)
     
     try:
         cursor = db.cursor()
@@ -168,33 +146,36 @@ def jobExist(jobid):
 '''
 功能：将取到的数据存入数据库参数表中
 '''  
-def GetsAndSave():
+def GetsAndSave(start):
     try:
-        jobid_list,jobid_excuteTime = getJobs()#获取全部jobid
-        print "all jobs:",jobid_list        
+        jobid_list,jobid_excuteTime = getJobs(start)#获取全部jobid
+        if jobid_list == None:
+            return        
+        print "all jobs:",jobid_list     
+       
         for jobid in jobid_list:   
             if jobExist(jobid) != True:#不存在则插入数据库
                 inputsize = getInput(jobid)#获取输入大小
                 parameterdir = getParameter(jobid)#获取参数字典
-                mapsTime,reducesTime = getMapReduceTime(jobid)
-                #获取统计数据
-                mapsMedian = np.median(mapsTime)
-                mapsStd = np.std(mapsTime)
-                reduceMedian = np.median(reducesTime)
-                reduceStd = np.std(reducesTime)
                 excuteTime = jobid_excuteTime[jobid]
                 parameters = []
                 for p in Wantedconf:
                     parameters.append(parameterdir[p])
-                saveParamters(jobid,excuteTime,parameters,inputsize,mapsMedian,mapsStd,reduceMedian,reduceStd)
+                saveParamters(jobid,excuteTime,parameters,inputsize)
                 
     except:
         print "cannot fetch data for network error"
     print "fetch and save successfully"
-try:
-    GetsAndSave()    
-except:
-    print "cannot fetch data normally"
 
-
-
+import time
+from time import ctime, sleep   
+start = 0
+while True:
+    try:
+        GetsAndSave(start)
+        print "at time %s" % ctime()
+        sleep(10)#1小时取一回数据
+        start =time.time()
+    except:
+        print "cannot fetch data normally，trys to connect latter"
+        sleep(10)#过一分钟再次连接
