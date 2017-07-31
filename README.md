@@ -1,5 +1,6 @@
 # tune-parameters-for-hadoop
-hadoop提交任务配置参数自动优化开源实现
+hadoop提交任务配置参数自动优化开源实现<br>
+hive应用hadoop参数配置实现自动化调优的方案<br>
 
 
 ## 项目简介 <br>
