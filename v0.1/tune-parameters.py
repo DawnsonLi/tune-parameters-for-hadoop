@@ -28,7 +28,7 @@ v0.1的局限性：
 '''
 
 from hdfs import InsecureClient
-def getPathLength(spath,host = 'http://localhost:50070',user='root'):
+def getPathLength(spath,host = 'http://s18:50070',user='mesos'):
     try:
         client = InsecureClient(host,user)
         return client.content(spath)['length']
@@ -48,6 +48,9 @@ def createModel(funcname):
     sql = sql + "where jobsubmit.jobname= '" + str(funcname) + "'"
     x, y = trainModel.SQLTrainData(sql)
     if len(x) >1:  # 检索出结果
+	x = x[:len(x)-1]
+	y = y[:len(y)-1]
+
         et = trainModel.getModel(x, y)
         return et
     return None
@@ -60,21 +63,21 @@ def createModel(funcname):
 def optiConf(model,N,command):
     conf = optimize.optimizer('config.json', model, 100000.0, 0.95, N)
     commandconfs = ''
-    commandconfs = commandconfs + ' -D mapreduce.input.fileinputformat.split.minsize=' + str(int(conf[0]))
-    commandconfs = commandconfs + ' -D mapreduce.reduce.shuffle.parallelcopies=' + str(int(conf[1]))
-    commandconfs = commandconfs + ' -D mapreduce.job.jvm.numtasks=' + str(int(conf[2]))
-    commandconfs = commandconfs + ' -D mapreduce.task.io.sort.factor=' + str(int(conf[3]))
-    commandconfs = commandconfs + ' -D mapreduce.task.io.sort.mb=' + str(int(conf[4]))
-    commandconfs = commandconfs + ' -D mapreduce.reduce.shuffle.merge.percent=' + str(conf[5])
-    commandconfs = commandconfs + ' -D mapreduce.reduce.input.buffer.percent=' + str(conf[6])
-    commandconfs = commandconfs + ' -D mapreduce.map.sort.spill.percent=' + str(conf[7])
-    commandconfs = commandconfs + ' -D mapreduce.job.reduces=' + str(int(conf[8]))
-    commandconfs = commandconfs + ' -D mapreduce.tasktracker.reduce.tasks.maximum=' + str(int(conf[9]))
-    commandconfs = commandconfs + ' -D mapreduce.reduce.shuffle.input.buffer.percent=' + str(conf[10])
-    commandconfs = commandconfs + ' -D mapreduce.tasktracker.map.tasks.maximum=' + str(int(conf[11]))
-    commandconfs = commandconfs + ' -D mapreduce.job.reduce.slowstart.completedmaps=' + str(conf[12])
-    commandconfs = commandconfs + ' -D mapreduce.reduce.merge.inmem.threshold=' + str(int(conf[13]))
-    commandconfs = commandconfs + ' -D mapreduce.reduce.shuffle.memory.limit.percent=' + str(conf[14])
+    
+    commandconfs = commandconfs + ' -D mapreduce.reduce.shuffle.parallelcopies=' + str(int(conf[0]))
+    commandconfs = commandconfs + ' -D mapreduce.job.jvm.numtasks=' + str(int(conf[1]))
+    commandconfs = commandconfs + ' -D mapreduce.task.io.sort.factor=' + str(int(conf[2]))
+    commandconfs = commandconfs + ' -D mapreduce.task.io.sort.mb=' + str(int(conf[3]))
+    commandconfs = commandconfs + ' -D mapreduce.reduce.shuffle.merge.percent=' + str(conf[4])
+    commandconfs = commandconfs + ' -D mapreduce.reduce.input.buffer.percent=' + str(conf[5])
+    commandconfs = commandconfs + ' -D mapreduce.map.sort.spill.percent=' + str(conf[6])
+    commandconfs = commandconfs + ' -D mapreduce.job.reduces=' + str(int(conf[7]))
+    commandconfs = commandconfs + ' -D mapreduce.tasktracker.reduce.tasks.maximum=' + str(int(conf[8]))
+    commandconfs = commandconfs + ' -D mapreduce.reduce.shuffle.input.buffer.percent=' + str(conf[9])
+    
+    commandconfs = commandconfs + ' -D mapreduce.job.reduce.slowstart.completedmaps=' + str(conf[10])
+    commandconfs = commandconfs + ' -D mapreduce.reduce.merge.inmem.threshold=' + str(int(conf[11]))
+    commandconfs = commandconfs + ' -D mapreduce.reduce.shuffle.memory.limit.percent=' + str(conf[12])
 
     jar = command[3]
     funcname = command[4]
@@ -93,76 +96,6 @@ def optiConf(model,N,command):
 
     return jarcommand + commandconfs + " " + iocommand
 
-'''
-@功能：当发现不能对任务进行调优时，就进行随机的参数配置
-'''
-import random
-def randomConf(command):
-    MapTasksMax = random.randrange(2, 203,20)  # 2 mapreduce.tasktracker.map.tasks.maximum  10 #there is no order here, but in optimize
-    SplitSize = random.randrange(0, 300, 64)  # 0 mapreduce.input.fileinputformat.split.minsize 5
-    SortMB = random.randrange(100, 1000, 50)  # 100 mapreduce.task.io.sort.mb 18
-    SortPer = 0.05 * random.randint(0, 7) + 0.6  # 0.8 mapreduce.map.sort.spill.percent 8
-    JVMReuse = random.randint(1, 10)  # 2 mapreduce.job.jvm.numtasks 10
-    ReduceTasksMax = random.randrange(2, 30, 2)  # 2 mapreduce.tasktracker.reduce.tasks.maximum 14
-    ShuffleMergePer = 0.05 * random.randint(0, 9) + 0.5  # 0.66 mapreduce.reduce.shuffle.merge.percent 10
-    ReduceSlowstart = 0.05 * random.randint(0, 7)  # 0.05 mapreduce.job.reduce.slowstart.completedmaps 8
-    ReduceInputPer = 0.05 * random.randint(0, 9)  # 0.0 mapreduce.reduce.input.buffer.percent 10
-    inMenMergeThreshold = random.randrange(100, 2000, 50)  # 1000 mapreduce.reduce.merge.inmem.threshold 38
-    ShuffleInputPer = 0.05 * random.randint(0, 9) + 0.5  # 0.7 mapreduce.reduce.shuffle.input.buffer.percent 10
-    Factor = random.randrange(5, 51, 5)  # 10 mapreduce.task.io.sort.factor  10
-    Parallelcopies = random.randrange(5, 51, 5)  # 5 mapreduce.reduce.shuffle.parallelcopies 10
-    ReduceNum = random.randrange(5, 51, 5)  # 1 mapreduce.job.reduces 10
-    ShufflelimitPer = 0.05 * random.randint(0, 9)  # 0.25 mapreduce.reduce.shuffle.memory.limit.percent 10
-    confs = []
-    confs.append(MapTasksMax)
-    confs.append(SplitSize)
-    confs.append(SortMB)
-    confs.append(JVMReuse)
-    confs.append(SortPer)
-    confs.append(ReduceTasksMax)
-    confs.append(ReduceSlowstart)
-    confs.append(ShuffleMergePer)
-    confs.append(ReduceInputPer)
-    confs.append(ShuffleInputPer)
-    confs.append(inMenMergeThreshold)
-    confs.append(Factor)
-    confs.append(Parallelcopies)
-    confs.append(ReduceNum)
-    confs.append(ShufflelimitPer)
-
-    commandconfs = ''
-    commandconfs = commandconfs + ' -D mapreduce.tasktracker.map.tasks.maximum=' + str(MapTasksMax)
-    commandconfs = commandconfs + ' -D mapreduce.input.fileinputformat.split.minsize=' + str(SplitSize)
-    commandconfs = commandconfs + ' -D mapreduce.task.io.sort.mb=' + str(SortMB)
-    commandconfs = commandconfs + ' -D mapreduce.map.sort.spill.percent=' + str(SortPer)
-    commandconfs = commandconfs + ' -D mapreduce.job.jvm.numtasks=' + str(JVMReuse)
-    commandconfs = commandconfs + ' -D mapreduce.tasktracker.reduce.tasks.maximum=' + str(ReduceTasksMax)
-    commandconfs = commandconfs + ' -D mapreduce.reduce.shuffle.merge.percent=' + str(ShuffleMergePer)
-    commandconfs = commandconfs + ' -D mapreduce.job.reduce.slowstart.completedmaps=' + str(ReduceSlowstart)
-    commandconfs = commandconfs + ' -D mapreduce.reduce.input.buffer.percent=' + str(ReduceInputPer)
-    commandconfs = commandconfs + ' -D mapreduce.reduce.merge.inmem.threshold=' + str(inMenMergeThreshold)
-    commandconfs = commandconfs + ' -D mapreduce.reduce.shuffle.input.buffer.percent=' + str(ShuffleInputPer)
-    commandconfs = commandconfs + ' -D mapreduce.task.io.sort.factor=' + str(Factor)
-    commandconfs = commandconfs + ' -D mapreduce.reduce.shuffle.parallelcopies=' + str(Parallelcopies)
-    commandconfs = commandconfs + ' -D mapreduce.job.reduces=' + str(ReduceNum)
-    commandconfs = commandconfs + ' -D mapreduce.reduce.shuffle.memory.limit.percent=' + str(ShufflelimitPer)
-
-    jar = command[3]
-    funcname = command[4]
-    inputpath = command[5]
-    outputpath = command[6]
-
-    jarcommand = "hadoop jar "
-    jarcommand += str(jar)
-    jarcommand += " "
-    jarcommand += str(funcname)
-    jarcommand += " "
-
-    iocommand = str(inputpath)
-    iocommand += " "
-    iocommand += str(outputpath)
-
-    return  jarcommand + commandconfs + " " + iocommand
 
 '''
 
@@ -172,32 +105,29 @@ def randomConf(command):
 '''
 
 def parseAndSubmit(command,threshold_size):
-    try:
-        funcname = command[4]
-        inputpath = command[5]
-        N = getPathLength(str(inputpath).strip())  # 计算输入N
-        print "the input size bytes : ", N
-        if int(N) < threshold_size:  # 如果数据量小于阈值，不进行优化
-            randomcommand = randomConf(command)
-            #print randomcommand
-            print "do not tune for the inputsize is low"
-            callcommand(randomcommand)
+    
+    funcname = command[4]
+    inputpath = command[5]
+    N = getPathLength(str(inputpath).strip())  # 计算输入N
+    print "the input size bytes : ", N
+    if int(N) < threshold_size:  # 如果数据量小于阈值，不进行优化
+        print "do not tune for the inputsize is low"
+       
+    else:
+        model = createModel(str(funcname).strip())
+        print funcname
+        print "create model successfully"
+        if model != None:#可以优化
+            print "start tunning"
+            tunecommand = optiConf(model,N,command)
+            print "tuned configuration parameters:"
+            print tunecommand
+		
+            callcommand(tunecommand)
         else:
-            model = createModel(str(funcname).strip())
-            print "create model successfully"
-            if model != None:#可以优化
-                print "start tunning"
-                tunecommand = optiConf(model,N,command)
-                #print tunecommand
-                callcommand(tunecommand)
-            else:
-                print "doesn't tune for the history data like this job is little"
+            print "doesn't tune for the history data like this job is little"
 
-    except:
-        print "some erros occur and use random parameters to run"
-        randomcommand = randomConf(command)
-        #print randomcommand
-        callcommand(randomcommand)
+    
 
 '''
 @功能：将命令传入python命令行进行执行
