@@ -1,9 +1,7 @@
 # -*- coding:utf-8 -*-
 import requests
-
 '''
-功能：给出了基于经验的对刚刚运行的任务进行自动化优化的一种方案
-'''
+功能：给出了基于经验的对刚刚运行的任务进行自动化优化的一种方�?'''
 Wantedconf = ['mapreduce.tasktracker.map.tasks.maximum', 'mapreduce.input.fileinputformat.split.minsize', \
               'mapreduce.task.io.sort.mb', 'mapreduce.map.sort.spill.percent', 'mapreduce.job.jvm.numtasks', \
               'mapreduce.tasktracker.reduce.tasks.maximum', 'mapreduce.reduce.shuffle.merge.percent', \
@@ -17,10 +15,8 @@ user = 'mesos'
 psw = 'mesos106'
 
 '''
-功能：按照jobid获取参数的配置信息
-输入：jobid
-返回：某个job的配置参数字典
-'''
+功能：按照jobid获取参数的配置信�?输入：jobid
+返回：某个job的配置参数字�?'''
 
 def getParameter(jobid):
     try:
@@ -41,8 +37,7 @@ def getParameter(jobid):
         print "network error when get parameters for jobid:", jobid
 
 '''
-功能：访问job history server,返回jobid列表，以及jobid对应的执行时间字典
-'''
+功能：访问job history server,返回jobid列表，以及jobid对应的执行时间字�?'''
 def getJobs():
     cs_url = url  # url为全局变量
     #print cs_url
