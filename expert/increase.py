@@ -1,7 +1,9 @@
 # -*- coding:utf-8 -*-
 import requests
+
 '''
-功能：给出了基于经验的对刚刚运行的任务进行自动化优化的一种方�?'''
+功能：给出了基于经验的对刚刚运行的任务进行自动化优化的一种方案
+'''
 Wantedconf = ['mapreduce.tasktracker.map.tasks.maximum', 'mapreduce.input.fileinputformat.split.minsize', \
               'mapreduce.task.io.sort.mb', 'mapreduce.map.sort.spill.percent', 'mapreduce.job.jvm.numtasks', \
               'mapreduce.tasktracker.reduce.tasks.maximum', 'mapreduce.reduce.shuffle.merge.percent', \
@@ -15,8 +17,10 @@ user = 'mesos'
 psw = 'mesos106'
 
 '''
-功能：按照jobid获取参数的配置信�?输入：jobid
-返回：某个job的配置参数字�?'''
+功能：按照jobid获取参数的配置信息
+输入：jobid
+返回：某个job的配置参数字典
+'''
 
 def getParameter(jobid):
     try:
@@ -37,7 +41,8 @@ def getParameter(jobid):
         print "network error when get parameters for jobid:", jobid
 
 '''
-功能：访问job history server,返回jobid列表，以及jobid对应的执行时间字�?'''
+功能：访问job history server,返回jobid列表，以及jobid对应的执行时间字典
+'''
 def getJobs():
     cs_url = url  # url为全局变量
     #print cs_url
@@ -154,12 +159,25 @@ if __name__ == '__main__':
     reduceInRecord = int(counters['REDUCE_INPUT_RECORDS'])
 
     iosortmb = int(expert.getIOSortMb(map_num, spill_records, recordsize,conf))
+    
+    #print mapOutputBytes,conf
+    #print expert.getSortFactor(mapOutputBytes,conf)
+    #print "**"
+
     sortfactors = expert.getSortFactor(mapOutputBytes,conf)
     reducenum = expert.getReduceNum(conf,nodenum)
     reducecopieds = expert.getReduceParallelCopies(mapOutputBytes,conf)
     sibp = expert.getShuffleInputBufferPercent(reduceInRecord,conf)
     smp = expert.getShuffleMergerPercent()
 
+    '''
+    print 'io.sort.tmb:',iosortmb
+    print 'sort.factor:',sortfactors
+    print 'mapreduce.reduce.num',reducenum
+    print 'reduce.copies.num:',reducecopieds
+    print 'shuffle input buffer percent:',sibp
+    print 'shuffle merger percent:',smp
+    '''
     print 'recommand you to use these settings:'
     p =  ' -D mapreduce.task.io.sort.mb='+str(iosortmb)
     p = p + ' -D mapreduce.task.io.sort.factor='+str(sortfactors)
@@ -168,6 +186,15 @@ if __name__ == '__main__':
     p = p + ' -D mapreduce.reduce.shuffle.input.buffer.percent='+str(sibp)
     #p = p + ' -D mapreduce.reduce.shuffle.memory.limit.percent='+str(smp)
     print p
+    '''
+    getIOSortMb(map_num, spill_records, recordsize, d)
+    getSortFactor(mapOutputBytes, d, threshold=10000000)
+    Compress(mapOutputBytes, d, threshold=10000000)
+    getReduceNum(d, nodenum)
+    getReduceParallelCopies(mapOutputBytes, d, threshold=10000000)
+    getShuffleInputBufferPercent(reduceInRecord, d, threshold=1000000)
+    getShuffleMergerPercent()
     
+    '''
 
 
