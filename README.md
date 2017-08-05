@@ -11,5 +11,6 @@ hive应用hadoop参数配置实现自动化调优的方案<br>
 拥有完备的信息，可以辅助用于hadoop历史任务的评价<br>
 给出了明确的开源解决方案，用户接口简单清晰，十分利于使用<br>
 给出了对hive应用hadoop mapreduce参数设置进行调优的实际方案<br>
-## 依赖<br>
+通过对hadoop专家知识的编码，支持对任务一次运行后的优化<br>
+## 感谢<br>
 python hdfs,sklearn等
