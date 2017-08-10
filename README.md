@@ -16,10 +16,10 @@ linux下安装示例：pip install hdfs<br>
 linux下安装示例：pip install sklearn<br>
 (3)python mysql包<br>
 linux下安装示例：pip install mysql-python<br>
-2.开启hadoop历史服务器，nodemanager rest api（使用经验调优工具时要开启用于获取节点个数）。<br>
-3.查看hadoop端口配置文件，修改python文件中（tuneparameters.py及deamon.py）中历史服务器和nodemanager的端口和地址。<br>
-4.配置mysql用户权限。<br>
-5.创建mysql数据库和表结构，具体sql语句在sql文件夹下；创建数据库hadoop，创建表jobsubmit和表jobParameters。<br>
+2. 开启hadoop历史服务器，nodemanager rest api（使用经验调优工具时要开启用于获取节点个数）。<br>
+3. 查看hadoop端口配置文件，修改python文件中（tuneparameters.py及deamon.py）中历史服务器和nodemanager的端口和地址。<br>
+4. 配置mysql用户权限。<br>
+5. 创建mysql数据库和表结构，具体sql语句在sql文件夹下；创建数据库hadoop，创建表jobsubmit和表jobParameters。<br>
 ## 相关使用说明：<br>
 根据实际情况选择运行tune-parameters.py、increase.py、deamon.py<br>
 这四个文件相互独立，运行情况如下：<br>
