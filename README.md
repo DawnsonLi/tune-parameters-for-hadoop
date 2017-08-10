@@ -43,7 +43,6 @@ linux下安装示例：pip install mysql-python<br>
 (1)map输入记录总量与输出记录总量比值(转化比)<br>
 (2)map输出字节与输出记录总量比值（刻画记录特征）<br>
 (3)每条记录花费的map时间(刻画map复杂度)<br>
-(4)每条输入reduce的记录话费的reduce时间（刻画reduce复杂度）<br>
+(4)每条输入reduce的记录花费的reduce时间（刻画reduce复杂度）<br>
 
-## 感谢<br>
-python hdfs,sklearn等
+
